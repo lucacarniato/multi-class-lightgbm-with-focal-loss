@@ -2,7 +2,7 @@ from sklearn import preprocessing
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import recall_score,accuracy_score
-from LightgbmFocalLoss import *
+from MultiClassLightgbmWithFocalLoss import *
 
 
 def test_with_iris():
@@ -37,4 +37,18 @@ def test_with_iris():
 
     acc_score = accuracy_score(y_test, y_pred)
     rec_score = recall_score(y_test, y_pred, average='macro')
+    print(acc_score,' ', rec_score)
+
+    #save the model
+    import dill
+    dill.dump(clf, open('model', 'wb'))
+
+    with open('model', 'rb') as file:
+        clf = dill.load(file)
+
+    y_pred = clf.predict(X_test)
+
+    acc_score = accuracy_score(y_test, y_pred)
+    rec_score = recall_score(y_test, y_pred, average='macro')
+
     print(acc_score,' ', rec_score)
