@@ -19,7 +19,7 @@ class OneVsRestClassifierCustomizedLoss(OneVsRestClassifier):
         Y = Y.tocsc()
         self.classes_ = self.label_binarizer_.classes_
         columns = (col.toarray().ravel() for col in Y.T)
-
+        
         if 'eval_set' in fit_params:
             # use eval_set for early stopping
             X_val, y_val = fit_params['eval_set'][0]

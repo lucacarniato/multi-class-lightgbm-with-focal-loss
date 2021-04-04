@@ -19,8 +19,6 @@ def test_imbalanced_dataset():
     y_label = le.fit_transform(y)
     X_train, X_test, y_train, y_test = train_test_split(X, y_label, test_size=0.30, random_state=42)
 
-    # clf = lgb.LGBMClassifier()
-
     loss = FocalLoss(alpha=0.75, gamma=3.0)
     loss_fun = lambda y_true, y_pred: (
     loss.grad(y_true, special.expit(y_pred)), loss.hess(y_true, special.expit(y_pred)))
