@@ -1,35 +1,37 @@
 from sklearn import preprocessing
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import recall_score,accuracy_score
-from MultiClassLightgbmWithFocalLoss import *
+from sklearn.metrics import recall_score, accuracy_score
+from OneVsRestClassifierCustomizedLoss import *
+from FocalLoss import FocalLoss
+import lightgbm as lgb
 
-
-def test_with_iris():
+def test_imbalanced_dataset():
     X, y = make_classification(n_classes=3,
-                               n_samples=500,
+                               n_samples=2000,
                                n_features=4,
                                n_informative=3,
                                n_redundant=1,
-                               weights=[.03, .02, .95],
+                               weights=[.01, .02, .97],
                                random_state=42)
 
-    le = preprocessing.LabelEncoder()  #
+    le = preprocessing.LabelEncoder()
     y_label = le.fit_transform(y)
     X_train, X_test, y_train, y_test = train_test_split(X, y_label, test_size=0.30, random_state=42)
 
-    model_params = {"num_leaves": 60,
-                    "max_depth": -1,
-                    "learning_rate": 0.01,
-                    "alpha_focal_loss": 0.75,
-                    "gamma_focal_loss": 2.0}
+    # clf = lgb.LGBMClassifier()
 
-    #clf = lgb.LGBMClassifier(n_jobs=3, **model_params)
-    #clf.fit(X_train, y_train, early_stopping_rounds=20, eval_set=[(X_test, y_test)])
+    loss = FocalLoss(alpha=0.75, gamma=3.0)
+    loss_fun = lambda y_true, y_pred: (
+    loss.grad(y_true, special.expit(y_pred)), loss.hess(y_true, special.expit(y_pred)))
+    estimator = lgb.LGBMClassifier(objective=loss_fun)
 
-    clf = MultiClassLightgbmWithFocalLoss(n_jobs=3, **model_params)
-    fit_params = {'eval_set': (X_test, y_test)}
+    clf = OneVsRestClassifierCustomizedLoss(estimator=estimator, loss=loss)
+
+    eval_metric = lambda y_true, y_pred: ('focal_loss', loss(y_true, special.expit(y_pred)).sum(), False)
+    fit_params = {'eval_set': [(X_test, y_test)], 'eval_metric': eval_metric}
     clf.fit(X_train, y_train, **fit_params)
+
     y_pred = clf.predict(X_test)
 
     print(y_pred)
@@ -37,9 +39,9 @@ def test_with_iris():
 
     acc_score = accuracy_score(y_test, y_pred)
     rec_score = recall_score(y_test, y_pred, average='macro')
-    print(acc_score,' ', rec_score)
+    print(acc_score, ' ', rec_score)
 
-    #save the model
+    # save the model
     import dill
     dill.dump(clf, open('model', 'wb'))
 
@@ -51,4 +53,4 @@ def test_with_iris():
     acc_score = accuracy_score(y_test, y_pred)
     rec_score = recall_score(y_test, y_pred, average='macro')
 
-    print(acc_score,' ', rec_score)
+    print(acc_score, ' ', rec_score)
