@@ -1,16 +1,15 @@
 import numpy as np
 from joblib import Parallel, delayed
 from sklearn.multiclass import OneVsRestClassifier, _ConstantPredictor
-from sklearn import clone
 from sklearn.preprocessing import LabelBinarizer
 from scipy import special
+import lightgbm as lgb
 
 
 class OneVsRestClassifierCustomizedLoss(OneVsRestClassifier):
 
-    def __init__(self, estimator, loss):
+    def __init__(self, loss):
         self.loss = loss
-        super().__init__(estimator)
 
     def fit(self, X, y, **fit_params):
 
@@ -25,34 +24,45 @@ class OneVsRestClassifierCustomizedLoss(OneVsRestClassifier):
             Y_val = self.label_binarizer_.transform(y_val)
             Y_val = Y_val.tocsc()
             columns_val = (col.toarray().ravel() for col in Y_val.T)
-            self.estimators_ = Parallel(n_jobs=None)(delayed(self._fit_binary)
-                                                     (self.estimator, X, column, X_val, column_val, **fit_params) for
-                                                     i, (column, column_val) in
-                                                     enumerate(zip(columns, columns_val)))
+            self.results_ = Parallel(n_jobs=None)(delayed(self._fit_binary)
+                                                  (X, column, X_val, column_val, **fit_params) for
+                                                  i, (column, column_val) in
+                                                  enumerate(zip(columns, columns_val)))
         else:
             # eval set not available
-            self.estimators_ = Parallel(n_jobs=None)(delayed(self._fit_binary)
-                                                     (self.estimator, X, column, None, None, **fit_params) for i, column
-                                                     in enumerate(columns))
+            self.results_ = Parallel(n_jobs=None)(delayed(self._fit_binary)
+                                                  (X, column, None, None, **fit_params) for i, column
+                                                  in enumerate(columns))
 
         return self
 
-    def _fit_binary(self, estimator, X, y, X_val, y_val, **fit_params):
+    def _fit_binary(self, X, y, X_val, y_val, **fit_params):
         unique_y = np.unique(y)
+        init_score_value = self.loss.init_score(y)
         if len(unique_y) == 1:
             estimator = _ConstantPredictor().fit(X, unique_y)
         else:
-            estimator = clone(estimator)
-            if 'eval_set' in fit_params and 'eval_metric' in fit_params:
-                estimator.fit(X, y,
-                              early_stopping_rounds=10,
-                              eval_set=[(X_val, y_val)],
-                              eval_metric=fit_params['eval_metric'],
-                              verbose=False)
-            else:
-                estimator.fit(X, y, verbose=False)
+            fit = lgb.Dataset(X, y, init_score=np.full_like(y, init_score_value, dtype=float))
+            if 'eval_set' in fit_params:
+                val = lgb.Dataset(X_val, y_val, init_score=np.full_like(y_val, init_score_value, dtype=float),
+                                  reference=fit)
 
-        return estimator
+                estimator = lgb.train(params={},
+                                      train_set=fit,
+                                      valid_sets=(fit, val),
+                                      valid_names=('fit', 'val'),
+                                      early_stopping_rounds=10,
+                                      fobj=self.loss.lgb_obj,
+                                      feval=self.loss.lgb_eval,
+                                      verbose_eval=10)
+            else:
+                estimator = lgb.train(params={},
+                                      train_set=fit,
+                                      fobj=self.loss.lgb_obj,
+                                      feval=self.loss.lgb_eval,
+                                      verbose_eval=10)
+
+        return estimator, init_score_value
 
     def predict(self, X):
 
@@ -61,18 +71,18 @@ class OneVsRestClassifierCustomizedLoss(OneVsRestClassifier):
         maxima.fill(-np.inf)
         argmaxima = np.zeros(n_samples, dtype=int)
 
-        for i, e in enumerate(self.estimators_):
+        for i, (e, init_score) in enumerate(self.results_):
             margins = e.predict(X, raw_score=True)
-            prob = special.expit(margins)
+            prob = special.expit(margins + init_score)
             np.maximum(maxima, prob, out=maxima)
             argmaxima[maxima == prob] = i
 
         return argmaxima
 
     def predict_proba(self, X):
-        y = np.zeros((X.shape[0], len(self.estimators_)))
-        for i, e in enumerate(self.estimators_):
+        y = np.zeros((X.shape[0], len(self.results_)))
+        for i, (e, init_score) in enumerate(self.results_):
             margins = e.predict(X, raw_score=True)
-            y[:, i] = special.expit(margins)
+            y[:, i] = special.expit(margins + init_score)
         y /= np.sum(y, axis=1)[:, np.newaxis]
         return y

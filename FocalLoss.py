@@ -61,6 +61,6 @@ class FocalLoss:
         y = train_data.get_label()
         p = special.expit(preds)
         is_higher_better = False
-        return 'focal_loss', self(y, p).mean(), is_higher_better
+        return 'focal_loss', self(y, p).sum(), is_higher_better
 
 

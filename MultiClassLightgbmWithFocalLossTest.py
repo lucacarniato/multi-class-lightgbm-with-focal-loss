@@ -20,15 +20,13 @@ def test_imbalanced_dataset():
     X_train, X_test, y_train, y_test = train_test_split(X, y_label, test_size=0.30, random_state=42)
 
     loss = FocalLoss(alpha=0.75, gamma=3.0)
-    loss_fun = lambda y_true, y_pred: (
-    loss.grad(y_true, special.expit(y_pred)), loss.hess(y_true, special.expit(y_pred)))
-    estimator = lgb.LGBMClassifier(objective=loss_fun)
 
-    clf = OneVsRestClassifierCustomizedLoss(estimator=estimator, loss=loss)
+    clf = OneVsRestClassifierCustomizedLoss(loss=loss)
 
-    eval_metric = lambda y_true, y_pred: ('focal_loss', loss(y_true, special.expit(y_pred)).sum(), False)
-    fit_params = {'eval_set': [(X_test, y_test)], 'eval_metric': eval_metric}
-    clf.fit(X_train, y_train, **fit_params)
+    #eval_metric = lambda y_true, y_pred: ('focal_loss', loss(y_true, special.expit(y_pred)).sum(), False)
+    #fit_params = {'eval_set': [(X_test, y_test)]}
+    #clf.fit(X_train, y_train, **fit_params)
+    clf.fit(X_train, y_train)
 
     y_pred = clf.predict(X_test)
 
