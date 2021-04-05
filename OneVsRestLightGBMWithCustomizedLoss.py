@@ -1,12 +1,12 @@
 import numpy as np
 from joblib import Parallel, delayed
-from sklearn.multiclass import OneVsRestClassifier, _ConstantPredictor
+from sklearn.multiclass import _ConstantPredictor
 from sklearn.preprocessing import LabelBinarizer
 from scipy import special
 import lightgbm as lgb
 
 
-class OneVsRestClassifierCustomizedLoss(OneVsRestClassifier):
+class OneVsRestLightGBMWithCustomizedLoss:
 
     def __init__(self, loss):
         self.loss = loss
@@ -47,7 +47,7 @@ class OneVsRestClassifierCustomizedLoss(OneVsRestClassifier):
                 val = lgb.Dataset(X_val, y_val, init_score=np.full_like(y_val, init_score_value, dtype=float),
                                   reference=fit)
 
-                estimator = lgb.train(params={},
+                estimator = lgb.train(params=fit_params,
                                       train_set=fit,
                                       valid_sets=(fit, val),
                                       valid_names=('fit', 'val'),
@@ -56,7 +56,7 @@ class OneVsRestClassifierCustomizedLoss(OneVsRestClassifier):
                                       feval=self.loss.lgb_eval,
                                       verbose_eval=10)
             else:
-                estimator = lgb.train(params={},
+                estimator = lgb.train(params=fit_params,
                                       train_set=fit,
                                       fobj=self.loss.lgb_obj,
                                       feval=self.loss.lgb_eval,

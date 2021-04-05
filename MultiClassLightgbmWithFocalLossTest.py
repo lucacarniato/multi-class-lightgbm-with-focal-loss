@@ -2,7 +2,7 @@ from sklearn import preprocessing
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import recall_score, accuracy_score
-from OneVsRestClassifierCustomizedLoss import *
+from OneVsRestLightGBMWithCustomizedLoss import OneVsRestLightGBMWithCustomizedLoss
 from FocalLoss import FocalLoss
 import lightgbm as lgb
 
@@ -21,17 +21,17 @@ def test_imbalanced_dataset():
 
     loss = FocalLoss(alpha=0.75, gamma=3.0)
 
-    clf = OneVsRestClassifierCustomizedLoss(loss=loss)
+    clf = OneVsRestLightGBMWithCustomizedLoss(loss=loss)
 
     #eval_metric = lambda y_true, y_pred: ('focal_loss', loss(y_true, special.expit(y_pred)).sum(), False)
-    #fit_params = {'eval_set': [(X_test, y_test)]}
-    #clf.fit(X_train, y_train, **fit_params)
-    clf.fit(X_train, y_train)
+    fit_params = {'eval_set': [(X_test, y_test)]}
+    clf.fit(X_train, y_train, **fit_params)
+    #clf.fit(X_train, y_train)
 
     y_pred = clf.predict(X_test)
 
-    print(y_pred)
-    print(y_test)
+    #print(y_pred)
+    #print(y_test)
 
     acc_score = accuracy_score(y_test, y_pred)
     rec_score = recall_score(y_test, y_pred, average='macro')
