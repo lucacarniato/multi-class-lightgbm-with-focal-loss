@@ -19,7 +19,6 @@ class OneVsRestClassifierCustomizedLoss(OneVsRestClassifier):
         Y = Y.tocsc()
         self.classes_ = self.label_binarizer_.classes_
         columns = (col.toarray().ravel() for col in Y.T)
-        
         if 'eval_set' in fit_params:
             # use eval_set for early stopping
             X_val, y_val = fit_params['eval_set'][0]
@@ -44,20 +43,14 @@ class OneVsRestClassifierCustomizedLoss(OneVsRestClassifier):
             estimator = _ConstantPredictor().fit(X, unique_y)
         else:
             estimator = clone(estimator)
-            init_score = np.zeros_like(y)
-            init_score_value = self.loss.init_score(y)
-            init_score.fill(init_score_value)
             if 'eval_set' in fit_params and 'eval_metric' in fit_params:
                 estimator.fit(X, y,
-                              init_score=init_score,
                               early_stopping_rounds=10,
                               eval_set=[(X_val, y_val)],
                               eval_metric=fit_params['eval_metric'],
                               verbose=False)
             else:
-                estimator.fit(X, y,
-                              init_score=init_score,
-                              verbose=False)
+                estimator.fit(X, y, verbose=False)
 
         return estimator
 
