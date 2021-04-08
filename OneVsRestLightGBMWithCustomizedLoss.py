@@ -8,8 +8,9 @@ import lightgbm as lgb
 
 class OneVsRestLightGBMWithCustomizedLoss:
 
-    def __init__(self, loss):
+    def __init__(self, loss, n_jobs=3):
         self.loss = loss
+        self.n_jobs = n_jobs
 
     def fit(self, X, y, **fit_params):
 
@@ -24,15 +25,15 @@ class OneVsRestLightGBMWithCustomizedLoss:
             Y_val = self.label_binarizer_.transform(y_val)
             Y_val = Y_val.tocsc()
             columns_val = (col.toarray().ravel() for col in Y_val.T)
-            self.results_ = Parallel(n_jobs=None)(delayed(self._fit_binary)
-                                                  (X, column, X_val, column_val, **fit_params) for
-                                                  i, (column, column_val) in
-                                                  enumerate(zip(columns, columns_val)))
+            self.results_ = Parallel(n_jobs=self.n_jobs)(delayed(self._fit_binary)
+                                                         (X, column, X_val, column_val, **fit_params) for
+                                                         i, (column, column_val) in
+                                                         enumerate(zip(columns, columns_val)))
         else:
             # eval set not available
-            self.results_ = Parallel(n_jobs=None)(delayed(self._fit_binary)
-                                                  (X, column, None, None, **fit_params) for i, column
-                                                  in enumerate(columns))
+            self.results_ = Parallel(n_jobs=self.n_jobs)(delayed(self._fit_binary)
+                                                         (X, column, None, None, **fit_params) for i, column
+                                                         in enumerate(columns))
 
         return self
 
