@@ -4,7 +4,7 @@ Confusion matrix on the test set using the standard LightGBM classifier
 
 ![Confusion matrix on the test set using the LGBMClassifier](https://github.com/lucacarniato/multi-class-lightgbm-with-focal-loss/blob/main/figures/LightGBMConfusionMatrix.png?raw=true)
 
-Fig.2 Confusion matrix on the test set using LightGBM and the customized multi-class Focal Loss class (OneVsRestLightGBMWithCustomizedLoss)
+Confusion matrix on the test set using LightGBM and the customized multi-class Focal Loss class (OneVsRestLightGBMWithCustomizedLoss)
 
 ![Confusion matrix on the test set using the OneVsRestLightGBMWithCustomizedLoss](https://github.com/lucacarniato/multi-class-lightgbm-with-focal-loss/blob/main/figures/LightGBMFocalLossConfusionMatrix.png?raw=true)
 
