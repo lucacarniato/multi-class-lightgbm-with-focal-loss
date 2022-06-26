@@ -1,7 +1,14 @@
-# multi-class-lightgbm-with-focal-loss
+# Multi class lightGBM with focal loss
 
+Confusion matrix on the test set using the standard LightGBM classifier
 
-## Intro
+![Confusion matrix on the test set using the LGBMClassifier](https://github.com/lucacarniato/multi-class-lightgbm-with-focal-loss/blob/main/figures/LightGBMConfusionMatrix.png?raw=true)
+
+Fig.2 Confusion matrix on the test set using LightGBM and the customized multi-class Focal Loss class (OneVsRestLightGBMWithCustomizedLoss)
+
+![Confusion matrix on the test set using the OneVsRestLightGBMWithCustomizedLoss](https://github.com/lucacarniato/multi-class-lightgbm-with-focal-loss/blob/main/figures/LightGBMFocalLossConfusionMatrix.png?raw=true)
+
+## Introduction
 
 This repository contains the source code of the medium post [Multi-Class classification using Focal Loss and LightGBM](https://towardsdatascience.com/multi-class-classification-using-focal-loss-and-lightgbm-a6a6dec28872)
 
