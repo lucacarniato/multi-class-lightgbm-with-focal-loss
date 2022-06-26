@@ -1,4 +1,4 @@
-# Multi class lightGBM with focal loss
+# Multi class LightGBM with focal loss
 
 Confusion matrix on the test set using the standard LightGBM classifier
 
